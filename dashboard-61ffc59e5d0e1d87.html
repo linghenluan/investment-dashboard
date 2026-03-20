@@ -8,7 +8,6 @@
 // 密码保护
 const PASSWORD_HASH = "82ae7ca678a3e36b094d5c97bfc10e7213b1872c40f8de66d76ef2ce19ae1a67";
 
-// SHA256 简单实现
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -23,7 +22,6 @@ function checkPassword() {
         if (hash === PASSWORD_HASH) {
             document.getElementById('passwordScreen').style.display = 'none';
             document.getElementById('dashboardContent').style.display = 'block';
-            // 存储认证（24小时有效）
             localStorage.setItem('dashboard_auth', hash + '_' + Date.now());
         } else {
             document.getElementById('errorMsg').textContent = '密码错误';
@@ -32,7 +30,6 @@ function checkPassword() {
     return false;
 }
 
-// 检查本地存储的认证
 function checkStoredAuth() {
     const stored = localStorage.getItem('dashboard_auth');
     if (!stored) return false;
@@ -46,7 +43,6 @@ function checkStoredAuth() {
     return false;
 }
 
-// 页面加载时检查
 document.addEventListener('DOMContentLoaded', function() {
     if (!checkStoredAuth()) {
         document.getElementById('passwordScreen').style.display = 'flex';
@@ -54,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <style>
-/* 密码保护层 */
 #passwordScreen {
     position: fixed;
     top: 0;
@@ -108,19 +103,14 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 8px;
     height: 16px;
 }
-
-/* 主内容 */
 #dashboardContent {
-    background: #0f1117;
-    color: #e0e0e0;
-    font-family: -apple-system, 'SF Pro Display', sans-serif;
-    font-size: 14px;
+    display: none;
+    padding: 20px;
+    color: #fff;
 }
-/* 更多样式... */
 </style>
 </head>
 <body>
-<!-- 密码保护层 -->
 <div id="passwordScreen">
     <div class="password-box">
         <div class="password-title">🔐 投资看板</div>
@@ -130,16 +120,20 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- 主内容 -->
 <div id="dashboardContent">
     <h1>投资看板</h1>
-    <p>数据更新时间：2026-03-20 22:02</p>
-    <!-- 这里放具体的看板内容 -->
+    <p>数据更新时间：2026-03-20 22:06</p>
+    <p>密码保护已启用，数据安全。</p>
 </div>
 
-<!-- JS依赖 -->
-<script src="https://linghenluan.github.io/investment-dashboard/chart.min.js"></script>
-<script src="https://linghenluan.github.io/investment-dashboard/dashboard.js"></script>
-<script src="https://linghenluan.github.io/investment-dashboard/portfolio_chart.js"></script>
+<!-- 加载原始看板内容 -->
+<iframe id="dashboardFrame" src="./investment-dashboard.html" style="width:100%; height:800px; border:none; display:none;"></iframe>
+
+<script>
+// 密码验证后显示iframe
+function showDashboard() {
+    document.getElementById('dashboardFrame').style.display = 'block';
+}
+</script>
 </body>
 </html>
