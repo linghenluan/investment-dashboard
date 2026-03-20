@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>投资看板</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1117;color:#e0e0e0;font-family:-apple-system,'SF Pro Display',sans-serif;font-size:14px}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav ── */
+.nav{position:sticky;top:0;z-index:100;background:#0f1117;border-bottom:1px solid #1f2937;display:flex;gap:0;padding:0 16px}
+.nav-tab{padding:12px 16px;font-size:13px;font-weight:500;color:#666;cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+.nav-tab.active{color:#fff;border-color:#4ade80}
+.nav-tab:hover{color:#ccc}
+
+/* ── Content ── */
+.page{display:none;padding:16px;max-width:960px;margin:0 auto}
+.page.active{display:block}
+.section-title{font-size:11px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px}
+
+/* ── Regime cards ── */
+.regime-row{display:flex;gap:10px;flex-wrap:wrap}
+.regime-card{flex:1;min-width:200px;background:#1a1d26;border-radius:10px;padding:14px}
+.regime-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.regime-flag{font-size:20px}
+.regime-label{font-size:12px;color:#888;flex:1}
+.regime-val{font-size:18px;font-weight:700}
+.regime-score{font-size:12px;color:#888;margin-bottom:6px}
+.regime-sigs{display:flex;gap:12px;font-size:12px;color:#888}
+.regime-sigs b{font-weight:600}
+.regime-indices{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:#888;margin-top:4px}
+.idx-item b{color:#aaa;margin-right:3px}
+
+/* ── Market notes ── */
+.mkt-notes{background:#1a1d26;border-radius:10px;padding:14px;margin-top:10px}
+.mkt-domain-title{font-size:13px;font-weight:600;color:#ccc;margin-bottom:10px}
+.mkt-row{display:flex;gap:10px;margin-bottom:8px;font-size:13px}
+.mkt-label{min-width:90px;color:#666;font-size:12px;padding-top:1px}
+.mkt-val{color:#ddd;line-height:1.6;flex:1}
+.mkt-empty{color:#444;font-size:12px;padding:8px 0}
+
+/* ── Core cards ── */
+.core-card{background:#1a1d26;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.card-name{font-size:16px;font-weight:600;color:#fff}
+.card-sym{font-size:11px;color:#666;margin-top:2px}
+.card-price-block{text-align:right}
+.card-price{font-size:20px;font-weight:700}
+.card-chg{font-size:12px;margin-top:2px}
+.metrics-row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.met .met-l{font-size:10px;color:#666;margin-bottom:2px}
+.met .met-v{font-size:13px;font-weight:500}
+.badges-row{margin-bottom:8px}
+.core-extra{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0;font-size:13px}
+.extra-item .el{color:#666;font-size:11px;margin-right:4px}
+.card-note{font-size:11px;color:#555;margin-top:6px;line-height:1.5}
+
+/* ── Pool rows ── */
+.pool-row{background:#1a1d26;border-radius:8px;padding:12px 14px;margin-bottom:6px;border-left:3px solid transparent}
+.pool-row.has-signal{border-color:#4ade80;background:#141c17}
+.row-main{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+.row-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.row-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}
+.row-name{font-size:14px;font-weight:600}
+.row-sym{font-size:11px;color:#666}
+.row-sector{font-size:11px;color:#555;background:#1f2937;padding:2px 6px;border-radius:4px}
+.row-price{font-weight:600}
+.row-rsi,.row-score,.row-perf{font-size:12px;color:#888}
+.dot{font-size:8px;vertical-align:middle}
+.dot-green{color:#4ade80}
+
+/* ── Signal detail ── */
+.sig-detail{margin-top:8px;font-size:12px;color:#999;padding:8px 10px;background:#0f1a12;border-radius:6px;line-height:1.8}
+.sig-tag{display:inline-block;background:#14532d;color:#4ade80;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-right:6px}
+.sig-history{margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;font-size:11px}
+.hist-label{color:#666;margin-right:2px}
+.hist-sep{color:#333;margin:0 6px}
+.day-cell{display:inline-block;padding:2px 5px;border-radius:3px;font-size:11px;font-weight:600}
+.ret-pos{color:#4ade80;background:#14532d22}
+.ret-neg{color:#f87171;background:#450a0a22}
+.ret-flat{color:#888;background:#1e293b}
+.ret-gray{color:#666}
+.total-ret{font-weight:600;padding:2px 8px;border-radius:4px;font-size:11px}
+.total-ret.ret-pos{background:#14532d44;color:#4ade80}
+.total-ret.ret-neg{background:#450a0a44;color:#f87171}
+.total-ret.ret-gray{background:#1e293b;color:#666}
+
+/* ── Badges ── */
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;margin-right:4px}
+.badge-green{background:#14532d;color:#4ade80}
+.badge-red{background:#450a0a;color:#f87171}
+.badge-yellow{background:#422006;color:#f0c040}
+.badge-gray{background:#1f2937;color:#9ca3af}
+.badge-blue{background:#1e3a5f;color:#60a5fa}
+.badge-dimmed{background:#111;color:#444}
+
+/* ── Colors ── */
+.up{color:#4ade80}
+.down{color:#f87171}
+.flat{color:#888}
+.offensive{color:#4ade80}
+.neutral{color:#f0c040}
+.defensive{color:#f87171}
+
+/* ── Overview boxes ── */
+.alert-box{background:#141c17;border:1px solid #14532d;border-radius:8px;padding:12px 14px;color:#4ade80;font-size:13px;margin-bottom:12px}
+.quiet-box{background:#1a1d26;border-radius:8px;padding:10px 14px;color:#666;font-size:13px;margin-bottom:12px}
+
+/* ── Overview summary ── */
+.overview-grid{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.ov-card{flex:1;min-width:140px;background:#1a1d26;border-radius:8px;padding:12px 14px}
+.ov-label{font-size:11px;color:#666;margin-bottom:4px}
+.ov-val{font-size:18px;font-weight:700}
+.ov-sub{font-size:11px;color:#888;margin-top:2px}
+
+/* ── Chart ── */
+.chart-card{background:#1a1d26;border-radius:10px;padding:16px;margin-bottom:16px}
+.chart-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.chart-title{font-size:14px;font-weight:600;color:#fff}
+.chart-sub{font-size:12px;color:#888;margin-top:3px}
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap}
+.leg{font-size:11px;padding-left:14px;position:relative;color:#888}
+.leg::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:10px;height:2px}
+.leg-total::before{background:#4ade80}
+.leg-meituan::before{background:#f97316}
+.leg-tsla::before{background:#60a5fa}
+.leg-cash::before{background:#888}
+
+/* ── Footer ── */
+.footer{font-size:11px;color:#333;text-align:right;padding:20px 16px;border-top:1px solid #1f2937;margin-top:20px}
+
+/* ── Responsive ── */
+@media(max-width:600px){
+  .regime-card{min-width:100%}
+  .row-right{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-tab active" data-tab="overview">总览</div>
+  <div class="nav-tab" data-tab="market">市场</div>
+  <div class="nav-tab" data-tab="core">持仓</div>
+  <div class="nav-tab" data-tab="pool">标的池</div>
+</nav>
+
+<!-- ══ 总览 ══════════════════════════════════════════════ -->
+<div id="tab-overview" class="page active">
+  
+    <div class="chart-card"
+         id="portfolioChartContainer"
+         data-chart="{&quot;labels&quot;: [&quot;03-18&quot;, &quot;03-19&quot;, &quot;03-20&quot;], &quot;total&quot;: [93.6, 93.9, 93.9], &quot;meituan&quot;: [76.8, 77.2, 77.2], &quot;tsla&quot;: [1.7, 1.7, 1.7], &quot;cash&quot;: [15.0, 15.0, 15.0]}">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">总资产走势</div>
+          <div class="chart-sub">近3天 · 今日 <b>93.9万</b> · 区间 <span class="up">+0.3万（+0.3%）</span></div>
+        </div>
+        <div class="chart-legend">
+          <span class="leg leg-total">总资产</span>
+          <span class="leg leg-meituan">美团</span>
+          <span class="leg leg-tsla">TSLA</span>
+          <span class="leg leg-cash">现金</span>
+        </div>
+      </div>
+      <canvas id="portfolioChart" height="120"></canvas>
+    </div>
+
+  <div class="section-title">市场环境</div>
+  <div class="regime-row">
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇭🇰</div>
+            <div class="regime-label">港股</div>
+            <div class="regime-val neutral">中性</div>
+          </div>
+          <div class="regime-score">得分 -0.39 · 趋势 deteriorating</div>
+          <div class="regime-sigs">
+            <span>宏观 <b class="down">↓</b></span>
+            <span>资金 <b class="flat">→</b></span>
+            <span>技术 <b class="down">↓</b></span>
+          </div>
+        </div>
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇺🇸</div>
+            <div class="regime-label">美股</div>
+            <div class="regime-val neutral">中性</div>
+          </div>
+          <div class="regime-score">得分 +0.06 · 趋势 stable</div>
+          <div class="regime-sigs">
+            <span>宏观 <b class="flat">→</b></span>
+            <span>资金 <b class="flat">→</b></span>
+            <span>技术 <b class="flat">→</b></span>
+          </div>
+        </div>
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇨🇳</div>
+            <div class="regime-label">A股</div>
+            <div class="regime-val neutral">参考</div>
+          </div>
+          <div class="regime-indices">
+            <span class="idx-item"><b>上证</b> <span class="down">-1.39%</span></span>
+            <span class="idx-item"><b>深成</b> <span class="down">-2.02%</span></span>
+            <span class="idx-item"><b>创业板</b> <span class="down">-1.11%</span></span>
+            
+          </div>
+        </div>
+  </div>
+
+  <div class="section-title">信号摘要</div>
+  <div class="alert-box">⚡ 3 个 BUY 信号：泡泡玛特（有效至2026-03-20）、美图公司（有效至2026-03-20）、美图公司（有效至2026-03-22）</div>
+
+  <div class="section-title">核心持仓</div>
+  
+        <div class="core-card">
+          <div class="card-top">
+            <div>
+              <div class="card-name">美团-W</div>
+              <div class="card-sym">HKEX:3690</div>
+            </div>
+            <div class="card-price-block">
+              <div class="card-price">HK$81.55</div>
+              <div class="card-chg up">+1.05%</div>
+            </div>
+          </div>
+          <div class="metrics-row">
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">48.8</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">2.85</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">80.17</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">78.96</div></div>
+          </div>
+          <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
+          
+            <div class="core-extra">
+              <div class="extra-item"><span class="el">成本</span> HK$117</div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-30.3%</span></div>
+              <div class="extra-item"><span class="el">减持进度</span> <span class="badge badge-yellow">0 / 1000股</span></div>
+            </div>
+          <div class="card-note">自购1400股@117港元 + 期权9000股@~150港元，减持计划：每月1000股，目标降至2000股以内</div>
+        </div>
+
+        <div class="core-card">
+          <div class="card-top">
+            <div>
+              <div class="card-name">特斯拉</div>
+              <div class="card-sym">NASDAQ:TSLA</div>
+            </div>
+            <div class="card-price-block">
+              <div class="card-price">$380.30</div>
+              <div class="card-chg down">-3.18%</div>
+            </div>
+          </div>
+          <div class="metrics-row">
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">36.4</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.25</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">391.82</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">400.67</div></div>
+          </div>
+          <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
+          
+            <div class="core-extra">
+              <div class="extra-item"><span class="el">成本</span> $420</div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-9.5%</span></div>
+              <div class="extra-item"><span class="el">持仓</span> 6股</div>
+              <div class="extra-item"><span class="up">距买点 $-4.70</span></div>
+              <div class="extra-item"><span class="badge badge-gray">定投买点 $385</span></div>
+            </div>
+          <div class="card-note">定投中：每月~1万RMB/2股，上限总仓位10%。买点$385（$381-385区间+收红/缩量）</div>
+        </div>
+</div>
+
+<!-- ══ 市场 ══════════════════════════════════════════════ -->
+<div id="tab-market" class="page">
+  <div class="section-title">市场环境评级</div>
+  <div class="regime-row">
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇭🇰</div>
+            <div class="regime-label">港股</div>
+            <div class="regime-val neutral">中性</div>
+          </div>
+          <div class="regime-score">得分 -0.39 · 趋势 deteriorating</div>
+          <div class="regime-sigs">
+            <span>宏观 <b class="down">↓</b></span>
+            <span>资金 <b class="flat">→</b></span>
+            <span>技术 <b class="down">↓</b></span>
+          </div>
+        </div>
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇺🇸</div>
+            <div class="regime-label">美股</div>
+            <div class="regime-val neutral">中性</div>
+          </div>
+          <div class="regime-score">得分 +0.06 · 趋势 stable</div>
+          <div class="regime-sigs">
+            <span>宏观 <b class="flat">→</b></span>
+            <span>资金 <b class="flat">→</b></span>
+            <span>技术 <b class="flat">→</b></span>
+          </div>
+        </div>
+    
+        <div class="regime-card">
+          <div class="regime-top">
+            <div class="regime-flag">🇨🇳</div>
+            <div class="regime-label">A股</div>
+            <div class="regime-val neutral">参考</div>
+          </div>
+          <div class="regime-indices">
+            <span class="idx-item"><b>上证</b> <span class="down">-1.39%</span></span>
+            <span class="idx-item"><b>深成</b> <span class="down">-2.02%</span></span>
+            <span class="idx-item"><b>创业板</b> <span class="down">-1.11%</span></span>
+            
+          </div>
+        </div>
+  </div>
+
+  <div class="section-title">港股分析</div>
+  <div class="mkt-notes">
+    <div class="mkt-domain-title">🇭🇰 港股</div>
+    <div class="mkt-row"><div class="mkt-label">今日事件</div><div class="mkt-val">美股科技大跌，特斯拉进入买入区间，美团昨日独立走强</div></div>
+<div class="mkt-row"><div class="mkt-label">整体环境影响</div><div class="mkt-val">美联储降息预期不变，国内宏观平静</div></div>
+<div class="mkt-row"><div class="mkt-label">行业影响</div><div class="mkt-val">本地生活服务板块相对强势</div></div>
+<div class="mkt-row"><div class="mkt-label">个股影响</div><div class="mkt-val">美团80.7港元+0.5%，继续执行月度减持计划</div></div>
+  </div>
+
+  <div class="section-title">美股分析</div>
+  <div class="mkt-notes">
+    <div class="mkt-domain-title">🇺🇸 美股</div>
+    <div class="mkt-row"><div class="mkt-label">今日事件</div><div class="mkt-val">特斯拉收.3，-3.2%，跌破关键支撑，进入定投买入区间</div></div>
+<div class="mkt-row"><div class="mkt-label">整体环境影响</div><div class="mkt-val">美联储降息预期暂稳，市场等待官员讲话</div></div>
+<div class="mkt-row"><div class="mkt-label">行业影响</div><div class="mkt-val">新能源车板块承压，特斯拉领跌</div></div>
+<div class="mkt-row"><div class="mkt-label">个股影响</div><div class="mkt-val">特斯拉触及买入区间下沿，等待收盘确认止跌</div></div>
+  </div>
+
+  <div class="section-title">A股分析</div>
+  <div class="mkt-notes">
+    <div class="mkt-domain-title">🇨🇳 A股</div>
+    <div class="mkt-row"><div class="mkt-label">今日事件</div><div class="mkt-val">上证收4062.98+0.32%，深证成指收14187.80+1.05%；A股走势分化，两市成交未见放量；消费/金融板块相对强势，新能源/科技分化</div></div>
+<div class="mkt-row"><div class="mkt-label">整体环境影响</div><div class="mkt-val">国内无重大政策事件，等待美联储tonight决议传导；北向资金持续观望</div></div>
+<div class="mkt-row"><div class="mkt-label">行业影响</div><div class="mkt-val">大盘价值（金融/消费）防御性偏强；科技/AI方向跟随港股有所修复；新能源、锂矿延续压力</div></div>
+<div class="mkt-row"><div class="mkt-label">个股影响</div><div class="mkt-val">暂无A股持仓，关注宏观情绪传导至港股</div></div>
+  </div>
+</div>
+
+<!-- ══ 持仓 ══════════════════════════════════════════════ -->
+<div id="tab-core" class="page">
+  <div class="section-title">核心持仓</div>
+  
+        <div class="core-card">
+          <div class="card-top">
+            <div>
+              <div class="card-name">美团-W</div>
+              <div class="card-sym">HKEX:3690</div>
+            </div>
+            <div class="card-price-block">
+              <div class="card-price">HK$81.55</div>
+              <div class="card-chg up">+1.05%</div>
+            </div>
+          </div>
+          <div class="metrics-row">
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">48.8</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">2.85</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">80.17</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">78.96</div></div>
+          </div>
+          <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
+          
+            <div class="core-extra">
+              <div class="extra-item"><span class="el">成本</span> HK$117</div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-30.3%</span></div>
+              <div class="extra-item"><span class="el">减持进度</span> <span class="badge badge-yellow">0 / 1000股</span></div>
+            </div>
+          <div class="card-note">自购1400股@117港元 + 期权9000股@~150港元，减持计划：每月1000股，目标降至2000股以内</div>
+        </div>
+
+        <div class="core-card">
+          <div class="card-top">
+            <div>
+              <div class="card-name">特斯拉</div>
+              <div class="card-sym">NASDAQ:TSLA</div>
+            </div>
+            <div class="card-price-block">
+              <div class="card-price">$380.30</div>
+              <div class="card-chg down">-3.18%</div>
+            </div>
+          </div>
+          <div class="metrics-row">
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">36.4</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.25</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">391.82</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">400.67</div></div>
+          </div>
+          <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
+          
+            <div class="core-extra">
+              <div class="extra-item"><span class="el">成本</span> $420</div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-9.5%</span></div>
+              <div class="extra-item"><span class="el">持仓</span> 6股</div>
+              <div class="extra-item"><span class="up">距买点 $-4.70</span></div>
+              <div class="extra-item"><span class="badge badge-gray">定投买点 $385</span></div>
+            </div>
+          <div class="card-note">定投中：每月~1万RMB/2股，上限总仓位10%。买点$385（$381-385区间+收红/缩量）</div>
+        </div>
+</div>
+
+<!-- ══ 标的池 ══════════════════════════════════════════════ -->
+<div id="tab-pool" class="page">
+  <div class="section-title">全部标的（32 只）</div>
+  
+        <div class="pool-row has-signal" data-sym="HKEX:9992">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-green">READY</span>
+              <span class="row-name">泡泡玛特</span>
+              <span class="row-sym">HKEX:9992</span>
+              <span class="row-sector">消费/潮玩</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">212.80</span>
+              <span class="row-chg down">-4.10%</span>
+              <span class="row-perf down">-14.00% 月</span>
+              <span class="row-rsi">RSI 45.8</span>
+              <span class="row-score">得分 0.77</span>
+            </div>
+          </div>
+          
+            <div class="sig-detail">
+              <span class="sig-tag">BUY</span>
+              入场 <b>215.4</b> · 止盈 <b>236.59</b> · 止损 <b>199.5</b> · 盈亏比 <b>1.33</b> · 有效至 2026-03-20
+              
+                <div class="sig-history">
+                  <span class="hist-label">走势：</span><span class="day-cell ret-pos" title="D+1 2026-03-18">+3.0%</span><span class="day-cell ret-neg" title="D+2 2026-03-19">-1.1%</span>
+                  <span class="hist-sep">|</span><span class="total-ret ret-neg">信号累计 -1.1%</span> <span class="total-ret ret-gray">未执行（假设买入累计 -1.1%）</span>
+                </div>
+            </div>
+          <span class="badge badge-gray">已跳过：策略上线第一天，先观察信号质量</span>
+        </div>
+
+        <div class="pool-row has-signal" data-sym="HKEX:1357">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-green">READY</span>
+              <span class="row-name">美图公司</span>
+              <span class="row-sym">HKEX:1357</span>
+              <span class="row-sector">科技/AI</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">5.12</span>
+              <span class="row-chg down">-3.60%</span>
+              <span class="row-perf down">-17.40% 月</span>
+              <span class="row-rsi">RSI 30.2</span>
+              <span class="row-score">得分 0.57</span>
+            </div>
+          </div>
+          
+            <div class="sig-detail">
+              <span class="sig-tag">BUY</span>
+              入场 <b>5.31</b> · 止盈 <b>5.93</b> · 止损 <b>4.84</b> · 盈亏比 <b>1.32</b> · 有效至 2026-03-22
+              
+                <div class="sig-history">
+                  <span class="hist-label">走势：</span><span class="day-cell ret-neg" title="D+0 2026-03-19">-3.6%</span>
+                  <span class="hist-sep">|</span><span class="total-ret ret-neg">信号累计 -3.6%</span> <span class="total-ret ret-gray">未执行（假设买入累计 -3.6%）</span>
+                </div>
+            </div>
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1698">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-green">READY</span>
+              <span class="row-name">腾讯音乐-SW</span>
+              <span class="row-sym">HKEX:1698</span>
+              <span class="row-sector">科技/音乐</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">41.12</span>
+              <span class="row-chg down">-8.10%</span>
+              <span class="row-perf down">-32.10% 月</span>
+              <span class="row-rsi">RSI 25.3</span>
+              <span class="row-score">得分 0.82</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:2318">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">中国平安</span>
+              <span class="row-sym">HKEX:2318</span>
+              <span class="row-sector">金融/保险</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">61.65</span>
+              <span class="row-chg down">-2.80%</span>
+              <span class="row-perf down">-12.40% 月</span>
+              <span class="row-rsi">RSI 34.3</span>
+              <span class="row-score">得分 0.42</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:981">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">中芯国际</span>
+              <span class="row-sym">HKEX:981</span>
+              <span class="row-sector">科技/半导体</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">59.75</span>
+              <span class="row-chg down">-3.20%</span>
+              <span class="row-perf down">-15.20% 月</span>
+              <span class="row-rsi">RSI 32.7</span>
+              <span class="row-score">得分 0.54</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9618">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">京东集团-SW</span>
+              <span class="row-sym">HKEX:9618</span>
+              <span class="row-sector">科技/电商</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">110.70</span>
+              <span class="row-chg down">-1.90%</span>
+              <span class="row-perf up">+4.90% 月</span>
+              <span class="row-rsi">RSI 55.6</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:291">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">华润啤酒</span>
+              <span class="row-sym">HKEX:291</span>
+              <span class="row-sector">消费/啤酒</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">24.92</span>
+              <span class="row-chg down">-2.70%</span>
+              <span class="row-perf down">-6.70% 月</span>
+              <span class="row-rsi">RSI 36.5</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1299">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">友邦保险</span>
+              <span class="row-sym">HKEX:1299</span>
+              <span class="row-sector">金融/保险</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">82.80</span>
+              <span class="row-chg down">-2.10%</span>
+              <span class="row-perf up">+2.20% 月</span>
+              <span class="row-rsi">RSI 46.9</span>
+              <span class="row-score">得分 0.48</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9896">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">名创优品</span>
+              <span class="row-sym">HKEX:9896</span>
+              <span class="row-sector">消费/零售出海</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">33.40</span>
+              <span class="row-chg down">-2.60%</span>
+              <span class="row-perf down">-12.30% 月</span>
+              <span class="row-rsi">RSI 40.3</span>
+              <span class="row-score">得分 0.47</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9626">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">哔哩哔哩-W</span>
+              <span class="row-sym">HKEX:9626</span>
+              <span class="row-sector">科技/视频</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">197.50</span>
+              <span class="row-chg down">-5.70%</span>
+              <span class="row-perf down">-17.90% 月</span>
+              <span class="row-rsi">RSI 36.9</span>
+              <span class="row-score">得分 0.82</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:20">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">商汤-W</span>
+              <span class="row-sym">HKEX:20</span>
+              <span class="row-sector">科技/AI</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">2.03</span>
+              <span class="row-chg down">-2.90%</span>
+              <span class="row-perf down">-23.10% 月</span>
+              <span class="row-rsi">RSI 34.4</span>
+              <span class="row-score">得分 0.49</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:2020">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">安踏体育</span>
+              <span class="row-sym">HKEX:2020</span>
+              <span class="row-sector">消费/运动</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">77.30</span>
+              <span class="row-chg down">-1.70%</span>
+              <span class="row-perf down">-8.50% 月</span>
+              <span class="row-rsi">RSI 39.8</span>
+              <span class="row-score">得分 0.50</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1810">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">小米集团-W</span>
+              <span class="row-sym">HKEX:1810</span>
+              <span class="row-sector">科技/消费电子</span>
+              
+            </div>
+            <div class="row-right">
+              <span class="dot dot-green" title="止跌确认">●</span>
+              <span class="row-price">36.32</span>
+              <span class="row-chg up">+3.40%</span>
+              <span class="row-perf down">-1.40% 月</span>
+              <span class="row-rsi">RSI 59.5</span>
+              <span class="row-score">得分 0.68</span>
+            </div>
+          </div>
+          
+          <span class="badge badge-blue">已执行 @ 38.56</span>
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1024">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">快手-W</span>
+              <span class="row-sym">HKEX:1024</span>
+              <span class="row-sector">科技/短视频</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">55.35</span>
+              <span class="row-chg down">-6.20%</span>
+              <span class="row-perf down">-19.10% 月</span>
+              <span class="row-rsi">RSI 25.5</span>
+              <span class="row-score">得分 0.56</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="NASDAQ:PDD">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">拼多多</span>
+              <span class="row-sym">NASDAQ:PDD</span>
+              <span class="row-sector">电商</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">97.43</span>
+              <span class="row-chg down">-3.30%</span>
+              <span class="row-perf down">-3.10% 月</span>
+              <span class="row-rsi">RSI 35.8</span>
+              <span class="row-score">得分 0.37</span>
+            </div>
+          </div>
+          
+          <span class="badge badge-blue">已执行 @ 106.47</span>
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9961">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">携程集团-S</span>
+              <span class="row-sym">HKEX:9961</span>
+              <span class="row-sector">科技/出行</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">403.40</span>
+              <span class="row-chg down">-2.90%</span>
+              <span class="row-perf down">-4.20% 月</span>
+              <span class="row-rsi">RSI 40.5</span>
+              <span class="row-score">得分 0.43</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:2331">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">李宁</span>
+              <span class="row-sym">HKEX:2331</span>
+              <span class="row-sector">消费/运动</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">19.75</span>
+              <span class="row-chg down">-2.40%</span>
+              <span class="row-perf down">-8.60% 月</span>
+              <span class="row-rsi">RSI 42.4</span>
+              <span class="row-score">得分 0.56</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1211">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">比亚迪股份</span>
+              <span class="row-sym">HKEX:1211</span>
+              <span class="row-sector">科技/新能源车</span>
+              
+            </div>
+            <div class="row-right">
+              <span class="dot dot-green" title="止跌确认">●</span>
+              <span class="row-price">103.20</span>
+              <span class="row-chg up">+1.00%</span>
+              <span class="row-perf up">+6.40% 月</span>
+              <span class="row-rsi">RSI 59.2</span>
+              <span class="row-score">得分 0.64</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:1318">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">毛戈平</span>
+              <span class="row-sym">HKEX:1318</span>
+              <span class="row-sector">消费/美妆</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">78.35</span>
+              <span class="row-chg down">-2.90%</span>
+              <span class="row-perf down">-8.90% 月</span>
+              <span class="row-rsi">RSI 45.1</span>
+              <span class="row-score">得分 0.78</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:6862">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">海底捞</span>
+              <span class="row-sym">HKEX:6862</span>
+              <span class="row-sector">消费/餐饮</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">16.04</span>
+              <span class="row-chg down">-2.80%</span>
+              <span class="row-perf down">-6.60% 月</span>
+              <span class="row-rsi">RSI 43.2</span>
+              <span class="row-score">得分 0.51</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:2015">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">理想汽车-W</span>
+              <span class="row-sym">HKEX:2015</span>
+              <span class="row-sector">科技/新能源车</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">66.00</span>
+              <span class="row-chg down">-1.30%</span>
+              <span class="row-perf down">-8.20% 月</span>
+              <span class="row-rsi">RSI 42.7</span>
+              <span class="row-score">得分 0.80</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9888">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">百度集团-SW</span>
+              <span class="row-sym">HKEX:9888</span>
+              <span class="row-sector">科技/AI搜索</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">117.80</span>
+              <span class="row-chg down">-3.30%</span>
+              <span class="row-perf down">-12.00% 月</span>
+              <span class="row-rsi">RSI 38.6</span>
+              <span class="row-score">得分 0.75</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="NASDAQ:QQQ">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">纳指100ETF</span>
+              <span class="row-sym">NASDAQ:QQQ</span>
+              <span class="row-sector">指数ETF</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">593.02</span>
+              <span class="row-chg down">-0.30%</span>
+              <span class="row-perf down">-0.90% 月</span>
+              <span class="row-rsi">RSI 41.1</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9999">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">网易-S</span>
+              <span class="row-sym">HKEX:9999</span>
+              <span class="row-sector">科技/游戏</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">183.30</span>
+              <span class="row-chg down">-2.40%</span>
+              <span class="row-perf down">-3.10% 月</span>
+              <span class="row-rsi">RSI 44.9</span>
+              <span class="row-score">得分 0.39</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:700">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">腾讯控股</span>
+              <span class="row-sym">HKEX:700</span>
+              <span class="row-sector">科技/社交游戏</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">513.00</span>
+              <span class="row-chg down">-6.80%</span>
+              <span class="row-perf down">-3.20% 月</span>
+              <span class="row-rsi">RSI 38.7</span>
+              <span class="row-score">得分 0.47</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="NASDAQ:NVDA">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">英伟达</span>
+              <span class="row-sym">NASDAQ:NVDA</span>
+              <span class="row-sector">科技/半导体</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">178.56</span>
+              <span class="row-chg down">-1.00%</span>
+              <span class="row-perf down">-1.80% 月</span>
+              <span class="row-rsi">RSI 43.6</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="NASDAQ:AAPL">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">苹果</span>
+              <span class="row-sym">NASDAQ:AAPL</span>
+              <span class="row-sector">科技/消费电子</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">248.96</span>
+              <span class="row-chg down">-0.40%</span>
+              <span class="row-perf down">-3.50% 月</span>
+              <span class="row-rsi">RSI 35.8</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:2097">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">蜜雪集团</span>
+              <span class="row-sym">HKEX:2097</span>
+              <span class="row-sector">消费/茶饮</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">330.60</span>
+              <span class="row-chg down">-3.10%</span>
+              <span class="row-perf down">-14.50% 月</span>
+              <span class="row-rsi">RSI 37.9</span>
+              <span class="row-score">得分 0.80</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="NASDAQ:BABA">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">阿里巴巴</span>
+              <span class="row-sym">NASDAQ:BABA</span>
+              <span class="row-sector">电商/云</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">—</span>
+              <span class="row-chg flat">—</span>
+              <span class="row-perf flat">— 月</span>
+              <span class="row-rsi">RSI —</span>
+              <span class="row-score">得分 0.46</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:9988">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">阿里巴巴-W</span>
+              <span class="row-sym">HKEX:9988</span>
+              <span class="row-sector">科技/电商</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">132.00</span>
+              <span class="row-chg down">-4.10%</span>
+              <span class="row-perf down">-13.50% 月</span>
+              <span class="row-rsi">RSI 38.5</span>
+              <span class="row-score">得分 0.89</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:168">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">青岛啤酒股份</span>
+              <span class="row-sym">HKEX:168</span>
+              <span class="row-sector">消费/啤酒</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">48.80</span>
+              <span class="row-chg down">-1.40%</span>
+              <span class="row-perf down">-5.60% 月</span>
+              <span class="row-rsi">RSI 41.9</span>
+              <span class="row-score">得分 0.54</span>
+            </div>
+          </div>
+          
+          
+        </div>
+
+        <div class="pool-row" data-sym="HKEX:388">
+          <div class="row-main">
+            <div class="row-left">
+              <span class="badge badge-gray">WATCHLIST</span>
+              <span class="row-name">香港交易所</span>
+              <span class="row-sym">HKEX:388</span>
+              <span class="row-sector">金融/交易所</span>
+              
+            </div>
+            <div class="row-right">
+              
+              <span class="row-price">398.60</span>
+              <span class="row-chg down">-1.00%</span>
+              <span class="row-perf down">-1.10% 月</span>
+              <span class="row-rsi">RSI 40.1</span>
+              <span class="row-score">得分 0.41</span>
+            </div>
+          </div>
+          
+          
+        </div>
+</div>
+
+<div class="footer">更新于 2026-03-20 16:15 · 数据来源：v2 系统</div>
+
+<script src="chart.min.js"></script>
+<script src="dashboard.js"></script>
+<script src="portfolio_chart.js"></script>
+
+</body>
+</html>
