@@ -7,35 +7,7 @@
 <script>
 // 密码保护
 const PASSWORD_HASH = "82ae7ca678a3e36b094d5c97bfc10e7213b1872c40f8de66d76ef2ce19ae1a67";
-function checkPassword() {
-    const input = document.getElementById('passwordInput').value;
-    const hash = sha256(input);
-    if (hash === PASSWORD_HASH) {
-        document.getElementById('passwordScreen').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-        // 存储session（24小时有效）
-        localStorage.setItem('dashboard_auth', hash + '_' + Date.now());
-    } else {
-        document.getElementById('errorMsg').textContent = '密码错误';
-    }
-    return false;
-}
 
-// 检查本地存储的认证
-function checkStoredAuth() {
-    const stored = localStorage.getItem('dashboard_auth');
-    if (!stored) return false;
-    const [hash, timestamp] = stored.split('_');
-    const now = Date.now();
-    if (hash === PASSWORD_HASH && (now - parseInt(timestamp)) < 24*60*60*1000) {
-        document.getElementById('passwordScreen').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-        return true;
-    }
-    return false;
-}
-
-// SHA256 简单实现（仅用于前端）
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -43,14 +15,103 @@ async function sha256(message) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// 页面加载时检查
-window.onload = function() {
+function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    const hashPromise = sha256(input);
+    hashPromise.then(hash => {
+        if (hash === PASSWORD_HASH) {
+            document.getElementById('passwordScreen').style.display = 'none';
+            document.getElementById('dashboardContainer').style.display = 'block';
+            localStorage.setItem('dashboard_auth', hash + '_' + Date.now());
+        } else {
+            document.getElementById('errorMsg').textContent = '密码错误';
+        }
+    });
+    return false;
+}
+
+function checkStoredAuth() {
+    const stored = localStorage.getItem('dashboard_auth');
+    if (!stored) return false;
+    const [hash, timestamp] = stored.split('_');
+    const now = Date.now();
+    if (hash === PASSWORD_HASH && (now - parseInt(timestamp)) < 24*60*60*1000) {
+        document.getElementById('passwordScreen').style.display = 'none';
+        document.getElementById('dashboardContainer').style.display = 'block';
+        return true;
+    }
+    return false;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
     if (!checkStoredAuth()) {
         document.getElementById('passwordScreen').style.display = 'flex';
     }
-};
+});
 </script>
 <style>
+/* 密码保护层 */
+#passwordScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #0f1117;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.password-box {
+    background: #1a1d26;
+    padding: 30px;
+    border-radius: 12px;
+    width: 320px;
+    text-align: center;
+}
+.password-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #fff;
+}
+.password-input {
+    width: 100%;
+    padding: 12px;
+    background: #0f1117;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.password-btn {
+    width: 100%;
+    padding: 12px;
+    background: #4ade80;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.error-msg {
+    color: #f87171;
+    font-size: 12px;
+    margin-top: 8px;
+    height: 16px;
+}
+
+/* 看板容器 */
+#dashboardContainer {
+    display: none;
+}
+
+/* 原始看板样式 */
+
 /* 密码保护层 */
 #passwordScreen {
     position: fixed;
@@ -245,9 +306,23 @@ a{color:inherit;text-decoration:none}
   .regime-card{min-width:100%}
   .row-right{justify-content:flex-start}
 }
+
 </style>
 </head>
 <body>
+<!-- 密码保护层 -->
+<div id="passwordScreen">
+    <div class="password-box">
+        <div class="password-title">🔐 投资看板</div>
+        <input type="password" id="passwordInput" class="password-input" placeholder="输入密码" onkeypress="if(event.keyCode==13) checkPassword()">
+        <button class="password-btn" onclick="checkPassword()">进入看板</button>
+        <div id="errorMsg" class="error-msg"></div>
+    </div>
+</div>
+
+<!-- 看板内容 -->
+<div id="dashboardContainer">
+
 
 <nav class="nav">
   <div class="nav-tab active" data-tab="overview">总览</div>
@@ -261,11 +336,11 @@ a{color:inherit;text-decoration:none}
   
     <div class="chart-card"
          id="portfolioChartContainer"
-         data-chart="{&quot;labels&quot;: [&quot;03-18&quot;, &quot;03-19&quot;, &quot;03-20&quot;], &quot;total&quot;: [93.6, 93.9, 92.4], &quot;meituan&quot;: [76.8, 77.2, 75.7], &quot;tsla&quot;: [1.7, 1.7, 1.7], &quot;cash&quot;: [15.0, 15.0, 15.0]}">
+         data-chart="{&quot;labels&quot;: [&quot;03-18&quot;, &quot;03-19&quot;, &quot;03-20&quot;, &quot;03-23&quot;], &quot;total&quot;: [93.6, 93.9, 92.4, 92.3], &quot;meituan&quot;: [76.8, 77.2, 75.7, 75.7], &quot;tsla&quot;: [1.7, 1.7, 1.7, 1.6], &quot;cash&quot;: [15.0, 15.0, 15.0, 15.0]}">
       <div class="chart-header">
         <div>
           <div class="chart-title">总资产走势</div>
-          <div class="chart-sub">近3天 · 今日 <b>92.4万</b> · 区间 <span class="down">-1.2万（-1.3%）</span></div>
+          <div class="chart-sub">近4天 · 今日 <b>92.3万</b> · 区间 <span class="down">-1.3万（-1.4%）</span></div>
         </div>
         <div class="chart-legend">
           <span class="leg leg-total">总资产</span>
@@ -336,7 +411,7 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="card-price-block">
               <div class="card-price">HK$79.15</div>
-              <div class="card-chg flat">—</div>
+              <div class="card-chg down">-1.92%</div>
             </div>
           </div>
           <div class="metrics-row">
@@ -362,23 +437,23 @@ a{color:inherit;text-decoration:none}
               <div class="card-sym">NASDAQ:TSLA</div>
             </div>
             <div class="card-price-block">
-              <div class="card-price">$380.30</div>
-              <div class="card-chg flat">—</div>
+              <div class="card-price">$367.96</div>
+              <div class="card-chg down">-3.24%</div>
             </div>
           </div>
           <div class="metrics-row">
-            <div class="met"><div class="met-l">RSI</div><div class="met-v">36.4</div></div>
-            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.25</div></div>
-            <div class="met"><div class="met-l">MA5</div><div class="met-v">391.82</div></div>
-            <div class="met"><div class="met-l">MA20</div><div class="met-v">400.67</div></div>
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">31.9</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.43</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">387.17</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">398.47</div></div>
           </div>
           <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
           
             <div class="core-extra">
               <div class="extra-item"><span class="el">成本</span> $420</div>
-              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-9.5%</span></div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-12.4%</span></div>
               <div class="extra-item"><span class="el">持仓</span> 6股</div>
-              <div class="extra-item"><span class="up">距买点 $-4.70</span></div>
+              <div class="extra-item"><span class="up">距买点 $-17.04</span></div>
               <div class="extra-item"><span class="badge badge-gray">定投买点 $385</span></div>
             </div>
           <div class="card-note">定投中：每月~1万RMB/2股，上限总仓位10%。买点$385（$381-385区间+收红/缩量）</div>
@@ -445,10 +520,10 @@ a{color:inherit;text-decoration:none}
   <div class="section-title">美股分析</div>
   <div class="mkt-notes">
     <div class="mkt-domain-title">🇺🇸 美股</div>
-    <div class="mkt-row"><div class="mkt-label">今日事件</div><div class="mkt-val">美联储官员讲话在即，无重大事件，特斯拉跌破支撑进入定投区间</div></div>
+    <div class="mkt-row"><div class="mkt-label">今日事件</div><div class="mkt-val">美联储官员讲话在即，科技股估值回调</div></div>
 <div class="mkt-row"><div class="mkt-label">整体环境影响</div><div class="mkt-val">降息预期暂稳，市场情绪谨慎</div></div>
-<div class="mkt-row"><div class="mkt-label">行业影响</div><div class="mkt-val">新能源车板块承压，AI板块震荡无催化</div></div>
-<div class="mkt-row"><div class="mkt-label">个股影响</div><div class="mkt-val">特斯拉触及定投区间，等待收盘止跌确认</div></div>
+<div class="mkt-row"><div class="mkt-label">行业影响</div><div class="mkt-val">新能源车承压，AI/半导体无催化</div></div>
+<div class="mkt-row"><div class="mkt-label">个股影响</div><div class="mkt-val">特斯拉进入定投区间，美团继续减持计划</div></div>
   </div>
 
   <div class="section-title">A股分析</div>
@@ -473,7 +548,7 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="card-price-block">
               <div class="card-price">HK$79.15</div>
-              <div class="card-chg flat">—</div>
+              <div class="card-chg down">-1.92%</div>
             </div>
           </div>
           <div class="metrics-row">
@@ -499,23 +574,23 @@ a{color:inherit;text-decoration:none}
               <div class="card-sym">NASDAQ:TSLA</div>
             </div>
             <div class="card-price-block">
-              <div class="card-price">$380.30</div>
-              <div class="card-chg flat">—</div>
+              <div class="card-price">$367.96</div>
+              <div class="card-chg down">-3.24%</div>
             </div>
           </div>
           <div class="metrics-row">
-            <div class="met"><div class="met-l">RSI</div><div class="met-v">36.4</div></div>
-            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.25</div></div>
-            <div class="met"><div class="met-l">MA5</div><div class="met-v">391.82</div></div>
-            <div class="met"><div class="met-l">MA20</div><div class="met-v">400.67</div></div>
+            <div class="met"><div class="met-l">RSI</div><div class="met-v">31.9</div></div>
+            <div class="met"><div class="met-l">ATR</div><div class="met-v">13.43</div></div>
+            <div class="met"><div class="met-l">MA5</div><div class="met-v">387.17</div></div>
+            <div class="met"><div class="met-l">MA20</div><div class="met-v">398.47</div></div>
           </div>
           <div class="badges-row"><span class="badge badge-red">❌ 未止跌</span></div>
           
             <div class="core-extra">
               <div class="extra-item"><span class="el">成本</span> $420</div>
-              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-9.5%</span></div>
+              <div class="extra-item"><span class="el">盈亏</span> <span class="down">-12.4%</span></div>
               <div class="extra-item"><span class="el">持仓</span> 6股</div>
-              <div class="extra-item"><span class="up">距买点 $-4.70</span></div>
+              <div class="extra-item"><span class="up">距买点 $-17.04</span></div>
               <div class="extra-item"><span class="badge badge-gray">定投买点 $385</span></div>
             </div>
           <div class="card-note">定投中：每月~1万RMB/2股，上限总仓位10%。买点$385（$381-385区间+收红/缩量）</div>
@@ -885,10 +960,10 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="row-right">
               
-              <span class="row-price">97.43</span>
-              <span class="row-chg down">-3.30%</span>
-              <span class="row-perf down">-3.10% 月</span>
-              <span class="row-rsi">RSI 35.8</span>
+              <span class="row-price">96.19</span>
+              <span class="row-chg down">-1.30%</span>
+              <span class="row-perf down">-6.80% 月</span>
+              <span class="row-rsi">RSI 33.7</span>
               <span class="row-score">得分 0.37</span>
             </div>
           </div>
@@ -1061,10 +1136,10 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="row-right">
               
-              <span class="row-price">593.02</span>
-              <span class="row-chg down">-0.30%</span>
-              <span class="row-perf down">-0.90% 月</span>
-              <span class="row-rsi">RSI 41.1</span>
+              <span class="row-price">582.06</span>
+              <span class="row-chg down">-1.80%</span>
+              <span class="row-perf down">-3.30% 月</span>
+              <span class="row-rsi">RSI 35.2</span>
               <span class="row-score">得分 0.46</span>
             </div>
           </div>
@@ -1127,10 +1202,10 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="row-right">
               
-              <span class="row-price">178.56</span>
-              <span class="row-chg down">-1.00%</span>
-              <span class="row-perf down">-1.80% 月</span>
-              <span class="row-rsi">RSI 43.6</span>
+              <span class="row-price">172.70</span>
+              <span class="row-chg down">-3.30%</span>
+              <span class="row-perf down">-8.50% 月</span>
+              <span class="row-rsi">RSI 37.8</span>
               <span class="row-score">得分 0.46</span>
             </div>
           </div>
@@ -1149,10 +1224,10 @@ a{color:inherit;text-decoration:none}
             </div>
             <div class="row-right">
               
-              <span class="row-price">248.96</span>
+              <span class="row-price">247.99</span>
               <span class="row-chg down">-0.40%</span>
-              <span class="row-perf down">-3.50% 月</span>
-              <span class="row-rsi">RSI 35.8</span>
+              <span class="row-perf down">-5.90% 月</span>
+              <span class="row-rsi">RSI 34.9</span>
               <span class="row-score">得分 0.46</span>
             </div>
           </div>
@@ -1249,11 +1324,71 @@ a{color:inherit;text-decoration:none}
         </div>
 </div>
 
-<div class="footer">更新于 2026-03-21 00:07 · 数据来源：v2 系统</div>
+<div class="footer">更新于 2026-03-23 08:04 · 数据来源：v2 系统</div>
 
 <script src="chart.min.js"></script>
 <script src="dashboard.js"></script>
 <script src="portfolio_chart.js"></script>
 
+
+</div>
+
+<!-- 原始看板脚本 -->
+<script>
+
+// 密码保护
+const PASSWORD_HASH = "82ae7ca678a3e36b094d5c97bfc10e7213b1872c40f8de66d76ef2ce19ae1a67";
+function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    const hash = sha256(input);
+    if (hash === PASSWORD_HASH) {
+        document.getElementById('passwordScreen').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+        // 存储session（24小时有效）
+        localStorage.setItem('dashboard_auth', hash + '_' + Date.now());
+    } else {
+        document.getElementById('errorMsg').textContent = '密码错误';
+    }
+    return false;
+}
+
+// 检查本地存储的认证
+function checkStoredAuth() {
+    const stored = localStorage.getItem('dashboard_auth');
+    if (!stored) return false;
+    const [hash, timestamp] = stored.split('_');
+    const now = Date.now();
+    if (hash === PASSWORD_HASH && (now - parseInt(timestamp)) < 24*60*60*1000) {
+        document.getElementById('passwordScreen').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+        return true;
+    }
+    return false;
+}
+
+// SHA256 简单实现（仅用于前端）
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// 页面加载时检查
+window.onload = function() {
+    if (!checkStoredAuth()) {
+        document.getElementById('passwordScreen').style.display = 'flex';
+    }
+};
+
+
+
+
+</script>
+
+<!-- JS文件引用 -->
+<script src="chart.min.js"></script>
+<script src="dashboard.js"></script>
+<script src="portfolio_chart.js"></script>
 </body>
 </html>
